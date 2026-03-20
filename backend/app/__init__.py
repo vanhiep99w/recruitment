@@ -1,0 +1,1 @@
+"""Recruitment backend application package."""

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-03-20T16:53:44Z",
+  "expires_at": "2026-03-20T17:53:44Z",
+  "gate_id": "recruitment-fdc",
+  "overall_pass": false,
+  "checks": {
+    "codex_review": {
+      "pass": true,
+      "ran_at": "2026-03-20T16:53:44Z",
+      "critical_count": 0,
+      "high_count": 0,
+      "medium_count": 3,
+      "low_count": 2,
+      "findings": [
+        {
+          "severity": "MEDIUM",
+          "file": "backend/.gitignore",
+          "line": 1,
+          "message": ".gitignore missing .env patterns — real .env would be tracked by git"
+        },
+        {
+          "severity": "MEDIUM",
+          "file": "backend/app/config.py",
+          "line": 17,
+          "message": "DATABASE_URL still has default value — allows silent misconfiguration in production"
+        },
+        {
+          "severity": "MEDIUM",
+          "file": "backend/app/main.py",
+          "line": 59,
+          "message": "CORS allow_methods=[\"*\"] and allow_headers=[\"*\"] overly permissive"
+        },
+        {
+          "severity": "LOW",
+          "file": "backend/tests/conftest.py",
+          "line": 14,
+          "message": "Test JWT_SECRET is 38 chars — shorter than recommended 32+ byte minimum"
+        },
+        {
+          "severity": "LOW",
+          "file": "backend/app/config.py",
+          "line": 10,
+          "message": "env_file is relative path — may fail if run outside backend/"
+        }
+      ],
+      "summary": "All 4 HIGH findings fixed. 0 CRITICAL/HIGH remain. 3 MEDIUM, 2 LOW informational."
+    },
+    "bd_preflight": {
+      "pass": null,
+      "ran_at": null,
+      "issues": []
+    }
+  }
+}
