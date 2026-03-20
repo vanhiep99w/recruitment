@@ -15,18 +15,24 @@
     "BEADS"
   ],
   "taskLoop": {
-    "currentTaskId": "recruitment-5h9.1",
-    "currentTaskSlug": "backend-project-scaffold",
-    "currentBranch": "feat/recruitment-5h9.1-backend-project-scaffold",
-    "subState": "REVIEWING",
-    "completedTasks": [],
+    "currentTaskId": null,
+    "currentTaskSlug": null,
+    "currentBranch": null,
+    "subState": null,
+    "completedTasks": [
+      {
+        "id": "recruitment-5h9.5",
+        "pr": 3,
+        "mergedAt": "2026-03-20T17:21:23Z"
+      }
+    ],
     "failedTasks": []
   },
   "failedAttempts": 0,
   "beadsEpic": "recruitment-5h9",
   "doltRemote": "https://doltremoteapi.dolthub.com/vanhiep99w/recruitment",
   "worktree": null,
-  "prNumber": null,
+  "prNumber": 3,
   "lastError": null,
   "heroScreen": "GuUvs",
   "designSystem": "docs/c4flow/designs/ai-cv-recruitment-assistant/ai-cv-recruitment-assistant.pen",
@@ -49,6 +55,5 @@
     "nginxConfigured": true,
     "sslConfigured": false,
     "githubSecretsConfigured": true
-  },
-  "taskLoop": null
+  }
 }
