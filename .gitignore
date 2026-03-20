@@ -2,3 +2,11 @@
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Environment secrets — commit .env.example instead, never .env with real values
+.env
+.env.local
+.env.*.local
+
+# SSL certificates
+nginx/certs/
