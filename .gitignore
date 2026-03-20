@@ -3,10 +3,15 @@
 .dolt/
 *.db
 
-# Environment files
+# Environment secrets — commit .env.example instead, never .env with real values
 .env
+.env.local
+.env.*.local
 *.env
 backend/.env
+
+# SSL certificates
+nginx/certs/
 
 # Quality gate (ephemeral)
 quality-gate-status.json

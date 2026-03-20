@@ -1,0 +1,54 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+
+            cd ~/recruitment
+
+            if [ ! -f .env ]; then
+              echo "ERROR: .env file not found on server. Copy .env.example to .env and fill in secrets."
+              exit 1
+            fi
+
+            echo "--- Pulling latest code from main ---"
+            git pull origin main
+
+            echo "--- Rebuilding and restarting services ---"
+            docker compose build --pull
+            docker compose up -d
+
+            echo "--- Running health check ---"
+            DOMAIN="${{ secrets.DEPLOY_DOMAIN }}"
+            MAX_ATTEMPTS=18
+            SLEEP_SECONDS=10
+            attempt=0
+
+            until curl -fsS "https://${DOMAIN}/api/health" > /dev/null 2>&1; do
+              attempt=$((attempt + 1))
+              if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+                echo "Health check failed after ${MAX_ATTEMPTS} attempts."
+                exit 1
+              fi
+              echo "Health check attempt ${attempt}/${MAX_ATTEMPTS} failed — retrying in ${SLEEP_SECONDS}s..."
+              sleep "$SLEEP_SECONDS"
+            done
+
+            echo "Deployment successful. Service is healthy at https://${DOMAIN}/api/health"

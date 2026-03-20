@@ -1,0 +1,15 @@
+# Terraform state — contains SSH private key in plaintext
+*.tfstate
+*.tfstate.backup
+
+# Terraform plan artifact — contains sensitive state snapshot
+tfplan
+tfplan.out
+
+# Terraform provider cache
+.terraform/
+.terraform.lock.hcl
+
+# Variable files — contain infra topology (zone IDs, etc.)
+*.tfvars
+*.tfvars.json
