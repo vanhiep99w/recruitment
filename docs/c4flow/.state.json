@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "currentState": "BEADS",
+  "currentState": "CODE_LOOP",
   "feature": {
     "name": "AI CV & Recruitment Assistant",
     "slug": "ai-cv-recruitment-assistant",
@@ -11,7 +11,8 @@
   "completedStates": [
     "RESEARCH",
     "SPEC",
-    "DESIGN"
+    "DESIGN",
+    "BEADS"
   ],
   "failedAttempts": 0,
   "beadsEpic": "recruitment-5h9",
@@ -40,5 +41,13 @@
     "nginxConfigured": true,
     "sslConfigured": false,
     "githubSecretsConfigured": true
+  },
+  "taskLoop": {
+    "currentTaskId": "recruitment-5h9.3",
+    "currentTaskSlug": "docker-compose-ci-setup",
+    "currentBranch": "feat/recruitment-5h9.3-docker-compose-ci-setup",
+    "subState": "REVIEWING",
+    "completedTasks": [],
+    "failedTasks": []
   }
 }
