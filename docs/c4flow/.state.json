@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "currentState": "DESIGN",
+  "currentState": "BEADS",
   "feature": {
     "name": "AI CV & Recruitment Assistant",
     "slug": "ai-cv-recruitment-assistant",
@@ -14,7 +14,7 @@
     "DESIGN"
   ],
   "failedAttempts": 0,
-  "beadsEpic": null,
+  "beadsEpic": "recruitment-5h9",
   "doltRemote": "https://doltremoteapi.dolthub.com/vanhiep99w/recruitment",
   "worktree": null,
   "prNumber": null,
