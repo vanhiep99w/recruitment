@@ -42,12 +42,5 @@
     "sslConfigured": false,
     "githubSecretsConfigured": true
   },
-  "taskLoop": {
-    "currentTaskId": "recruitment-5h9.3",
-    "currentTaskSlug": "docker-compose-ci-setup",
-    "currentBranch": "feat/recruitment-5h9.3-docker-compose-ci-setup",
-    "subState": "REVIEWING",
-    "completedTasks": [],
-    "failedTasks": []
-  }
+  "taskLoop": null
 }
