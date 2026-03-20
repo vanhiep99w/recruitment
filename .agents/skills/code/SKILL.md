@@ -1,6 +1,6 @@
 ---
 name: c4flow:code
-description: Execute code implementation via a strict serial task loop — pick one unblocked task, TDD it, verify, review, PR, merge, then pick the next task. Each task gets its own branch (feat/<bead-id>-<slug>). Uses bd ready → atomic claim → TDD (RED gate pause) → verify → review → PR/merge → close → repeat. Trigger when the user wants to start coding, implement tasks, or run the implementation phase.
+description: Execute code implementation via a strict serial task loop — pick one unblocked task, TDD it, verify, review, PR, merge, then pick the next task. Each task gets its own branch (feat/bead-id-slug). Uses bd ready → atomic claim → set in-progress → dolt push → TDD (RED gate pause) → verify → review → PR/merge → close → repeat. Trigger when the user wants to start coding, implement tasks, or run the implementation phase.
 ---
 
 # /c4flow:code — Strict Serial Task Loop
@@ -146,24 +146,37 @@ Ready tasks for <actor>:
 Pick a task (default: 1, the highest priority unblocked task):
 ```
 
-### Claim atomically
+### Claim and set in-progress
 
 ```bash
 TASK_ID=<selected-id>
+
+# 1. Claim the task (assigns to current actor)
 CLAIM_RESULT=$(bd update "$TASK_ID" --claim --json 2>&1)
 CLAIM_OK=$(echo "$CLAIM_RESULT" | jq -r '.status // empty' 2>/dev/null)
+
+if [ "$CLAIM_OK" != "ok" ]; then
+  echo "Task $TASK_ID is already claimed. Re-running bd ready..."
+  # Loop back to discovery — do NOT proceed
+fi
+
+# 2. Move from "active" → "in-progress" immediately
+bd update "$TASK_ID" --status "in-progress" --json 2>&1
 ```
 
-If claim fails (task already claimed by someone else):
-```bash
-echo "Task $TASK_ID is already claimed. Re-running bd ready..."
-# Loop back to discovery — do NOT proceed
-```
+> **Critical:** Status must be set to `in-progress` **before** any coding starts — not at close time. This makes task progress visible to the team immediately.
 
-### Sync to DoltHub
+### Sync to DoltHub immediately
 
 ```bash
-bd dolt push 2>/dev/null && echo "Synced: task $TASK_ID status visible to team"
+bd dolt commit -m "claim: task $TASK_ID in_progress" 2>/dev/null
+DOLT_RESULT=$(bd dolt push 2>&1)
+if [ $? -eq 0 ]; then
+  echo "Synced: task $TASK_ID is in-progress, visible to team on DoltHub"
+else
+  echo "WARNING: Dolt push failed. Task is claimed locally but team may not see it yet."
+  echo "Run 'bd dolt push' manually when network is available."
+fi
 ```
 
 ### Write taskLoop to .state.json
@@ -458,6 +471,7 @@ bd close "$TASK_ID" --reason "Implemented: $TASK_TITLE. PR: #$PR_NUMBER. Branch:
 ### Sync to DoltHub
 
 ```bash
+bd dolt commit -m "close: task $TASK_ID done" 2>/dev/null
 bd dolt push 2>/dev/null && echo "Synced: task $TASK_ID closed"
 ```
 

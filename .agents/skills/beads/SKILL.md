@@ -53,6 +53,24 @@ Ask the user:
 
    Default to **B (Standard)** if user doesn't specify. Remember this choice for Step 4.
 
+### Step 2b: Pre-Breakdown Analysis (before writing tasks)
+
+**Read the decomposition guide first:**
+> See [references/task-decomposition.md](references/task-decomposition.md) for parallelism-first principles and anti-patterns.
+
+Analyze the spec to identify:
+1. **Cross-team boundaries** — where does data/interface cross people? (these are contract points)
+2. **Layer 0 candidates** — what can start with zero dependencies? (schema design, API contract, scaffolding, mocks)
+3. **Stub opportunities** — what can be stubbed/faked so one side doesn't wait for the other?
+4. **Integration seams** — where do pieces actually need to connect? (these are the only true `blocks`)
+
+**Critical question to answer before breaking tasks:**
+> "Can every team member start working on something meaningful on Day 1?"
+
+If no → redesign the decomposition. Layer 0 must not be empty or trivial.
+
+> **Anti-pattern warning:** A breakdown where tasks go DB → API → UI → Integration in strict sequence scores 1/5 on parallelism. This means only one person works at a time. Break by component AND by layer instead.
+
 ### Step 3: Check Beads Installation
 
 ```bash
@@ -273,6 +291,25 @@ bd ready --json
 bd blocked
 ```
 
+#### Self-check: Parallelism Score
+
+After verifying the graph, score the decomposition:
+
+| Score | Description | Indicator |
+|-------|-------------|-----------|
+| 5 | Maximum parallel | Multiple people working every day |
+| 4 | Good | Some sequential chains, < 3 layers |
+| 3 | Acceptable | Occasional bottlenecks, ~4 layers |
+| 2 | Poor | One person drives most, > 5 layers |
+| 1 | **Terrible** | Sequential chain — one task blocks everything |
+
+If score ≤ 3, redesign. Common fixes:
+- Extract contract/schema design into Layer 0
+- Stub/mock a dependency so the blocked side can proceed
+- Reassign tasks so each person has Layer 0 work
+
+**Never present a score ≤ 2 to the user without flagging it.**
+
 #### Present to user
 
 Show the full breakdown with all metadata:
@@ -305,6 +342,16 @@ Layer 2:            bd-a1b2.4              ← after API + UI
 ```
 
 Also show `bd ready --json` output. Ask user to review and iterate.
+
+**Include parallelism score in the presentation:**
+```
+Parallelism Score: 4/5 ✅
+Layer 0 (start now): 3 tasks — all unblocked
+Layer 1 (after Layer 0): 2 tasks
+Layer 2 (integration): 1 task
+```
+
+If score ≤ 3, explicitly call it out and propose fixes before finalizing.
 
 ### Step 4b: Fallback to tasks.md (no Beads)
 
@@ -381,3 +428,5 @@ Every task created by this skill should have:
 - ✅ Correct dependency type (`blocks` only when truly sequential)
 - ✅ Notes with implementation context via `bd edit --notes`
 - ✅ Design notes when architecture decisions apply via `bd edit --design`
+- ✅ **Parallelism score ≥ 4** — no sequential chains longer than 3 tasks
+- ✅ **Layer 0 is non-empty** — every team member can start Day 1

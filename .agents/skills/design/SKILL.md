@@ -1,12 +1,12 @@
 ---
 name: c4flow:design
-description: Generate design system and UI mockups for a feature using Pencil MCP. Runs after SPEC phase, before BEADS. Produces MASTER.md (design tokens), screen-map.md (screen breakdown), and a .pen file with reusable components and screen frames. Use when the workflow reaches DESIGN state or user asks to design screens/UI. Integrates impeccable best practices, OKLCH colors, tinted neutrals, modular typography, spatial rhythm, motion tokens, 8-state component design, and UX writing.
+description: Generate design system and UI mockups for a feature using Pencil MCP. Runs after SPEC phase, before BEADS. Produces MASTER.md (design tokens), screen-map.md (screen breakdown), and a .pen file with reusable components and screen frames. Use when the workflow reaches DESIGN state or user asks to design screens/UI. Integrates impeccable best practices OKLCH colors, tinted neutrals, modular typography, spatial rhythm, motion tokens, 8-state component design, and UX writing.
 ---
 
 # /c4flow:design — Design System + Mockups
 
 **Phase**: 2: Design & Beads
-**Agent type**: Main agent (interactive) + sub-agents (sequential screen composition)
+**Agent type**: Main agent (interactive) + sub-agents (parallel screen composition)
 **Status**: Implemented
 
 ## Workflow Overview
@@ -14,8 +14,8 @@ description: Generate design system and UI mockups for a feature using Pencil MC
 ```
 Step 0: Teach   → Auto-parse context → Recommend → User approves
 Phase 1:        → Screen map + Design system tokens + Components + Hero screen
-Phase 2:        → Remaining screens (sub-agents, sequential)
-Phase 3:        → Final review + Gate check → BEADS
+Phase 2:        → Remaining screens (sub-agents, parallel)
+Phase 3:        → Final review + Gate check → update .state.json → BEADS
 ```
 
 ---
@@ -287,18 +287,20 @@ If resuming, tell user: "Found existing design artifacts. Resuming from [step]. 
 
 ---
 
-## Phase 2: Sub-Agents (Sequential)
+## Phase 2: Sub-Agents (Parallel)
 
-**Goal**: Compose remaining screens one by one, each via a fresh sub-agent.
+**Goal**: Compose remaining screens concurrently — each screen gets its own sub-agent running in parallel. All agents write to the same `.pen` file safely (Pencil MCP handles concurrent writes).
 
 1. Read `screen-map.md` — list all screens except the hero
-2. If >15 screens: batch into groups of 5 — complete one group, do user review, then next group
-3. Call `batch_get({patterns: [{reusable: true}], searchDepth: 2})` — extract ALL component ref IDs
-4. For each remaining screen, dispatch a sub-agent with the prompt template below
-5. Wait for each sub-agent to complete before dispatching the next (sequential — same .pen file)
-   - **BLOCKED**: pause, present blocker to user, ask for guidance
-   - **DONE_WITH_CONCERNS**: present concerns to user, ask "Proceed or fix first?"
-   - **DONE**: continue to next screen
+2. If >15 screens: batch into groups of 5 — dispatch one group at a time, wait all in group, user review, then next group
+3. Call `batch_get({patterns: [{reusable: true}], searchDepth: 2})` — extract ALL component ref IDs **once** before dispatching
+4. Dispatch **all remaining screen sub-agents in parallel** using the prompt template below
+   - Each sub-agent needs: feature name, `.pen` path, DS frame ID, hero frame ID, screen spec, all component ref IDs, design tokens
+   - Model selection per screen: simple form → `haiku`, dashboard/complex → `sonnet`
+5. Wait for all sub-agents to complete
+   - **BLOCKED**: collect all blockers, present to user, ask for guidance
+   - **DONE_WITH_CONCERNS**: collect all concerns, present to user, ask "Proceed or fix first?"
+   - **DONE**: continue to Phase 3
 6. After all screens done: call `get_screenshot()` for all screen frames, present batch review
 7. If user requests fixes: dispatch fix sub-agent for that screen only
 
@@ -379,10 +381,34 @@ Include:
    - User approved final review
 4. Update `.state.json`:
    ```bash
-   jq '.screenCount = <N>' docs/c4flow/.state.json > docs/c4flow/.state.json.tmp \
-     && mv docs/c4flow/.state.json.tmp docs/c4flow/.state.json
+   # Read current state first
+   CURRENT=$(cat docs/c4flow/.state.json)
+   COMPLETED=$(echo "$CURRENT" | jq -r '.completedStates // []')
+   PHASE_NAME="DESIGN"
+
+   # Add DESIGN to completedStates if not already there
+   if echo "$COMPLETED" | grep -q "\"$PHASE_NAME\""; then
+     NEW_COMPLETED="$COMPLETED"
+   else
+     NEW_COMPLETED=$(echo "$COMPLETED" | jq --arg p "$PHASE_NAME" '. + [$p]')
+   fi
+
+   # Update state: mark DESIGN done, screenCount, design path, move to next state
+   echo "$CURRENT" | jq \
+     --argjson completed "$NEW_COMPLETED" \
+     --arg count "<N>" \
+     --arg designPath "docs/c4flow/designs/<slug>/<slug>.pen" \
+     --arg nextState "BEADS" \
+     '
+     .completedStates = $completed
+     | .currentState = $nextState
+     | .screenCount = ($count | tonumber)
+     | .designPath = $designPath
+     ' > docs/c4flow/.state.json.tmp \
+   && mv docs/c4flow/.state.json.tmp docs/c4flow/.state.json
    ```
-5. Report to orchestrator: DONE — gate conditions met, ready for BEADS
+   > **Critical:** This is the ONLY place `.state.json` is updated during design. The orchestrator reads this file to determine the next state (BEADS).
+5. Report to user: DONE — gate conditions met, design artifacts ready, state updated to BEADS
 
 ---
 
