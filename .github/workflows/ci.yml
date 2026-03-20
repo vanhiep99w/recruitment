@@ -32,11 +32,10 @@ jobs:
         ports:
           - 6379:6379
         options: >-
-          --health-cmd "redis-cli -a testpassword ping"
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-          -- redis-server --requirepass testpassword
 
     steps:
       - name: Checkout repository
@@ -61,7 +60,7 @@ jobs:
       - name: Run pytest
         env:
           DATABASE_URL: postgresql://postgres:testpassword@localhost:5432/recruitment_test
-          REDIS_URL: redis://:testpassword@localhost:6379
+          REDIS_URL: redis://localhost:6379
         run: |
           pytest backend/tests/ -v --tb=short --cov=backend --cov-report=term-missing
 
