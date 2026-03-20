@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "currentState": "DESIGN",
+  "feature": {
+    "name": "AI CV & Recruitment Assistant",
+    "slug": "ai-cv-recruitment-assistant",
+    "description": "Giải pháp hỗ trợ recruiter phân tích JD/CV, đánh giá mức độ phù hợp ứng viên, chuẩn hóa dữ liệu ứng viên, và tạo nội dung (outreach, report, summary) — giảm thời gian xử lý, tăng độ chính xác matching, nâng cao hiệu suất tuyển dụng."
+  },
+  "mode": "research",
+  "startedAt": "2026-03-20",
+  "completedStates": ["RESEARCH", "SPEC"],
+  "failedAttempts": 0,
+  "beadsEpic": null,
+  "doltRemote": "https://doltremoteapi.dolthub.com/vanhiep99w/recruitment",
+  "worktree": null,
+  "prNumber": null,
+  "lastError": null
+}
