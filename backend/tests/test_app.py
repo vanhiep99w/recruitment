@@ -3,7 +3,7 @@ Tests for FastAPI app — verifies importability and /health endpoint.
 Phase 1: RED — these tests must fail before implementation.
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from httpx import ASGITransport, AsyncClient
 
 
 def test_app_importable():
@@ -29,10 +29,10 @@ def test_app_has_health_endpoint():
 @pytest.mark.asyncio
 async def test_health_endpoint_returns_200():
     """GET /health must return 200 with status ok."""
-    from fastapi.testclient import TestClient
     from app.main import app
-    with TestClient(app) as client:
-        response = client.get("/health")
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.get("/health")
         assert response.status_code == 200
         data = response.json()
         assert data.get("status") == "ok"

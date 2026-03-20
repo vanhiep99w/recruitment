@@ -143,7 +143,17 @@ class LLMClient:
             max_tokens=1200,
             response_format={"type": "json_object"},
         )
-        return json.loads(response)
+        parsed = json.loads(response)
+        if "experience" not in parsed:
+            parsed["experience"] = list(parsed.get("work_experience") or [])
+        if "work_experience" not in parsed:
+            parsed["work_experience"] = list(parsed.get("experience") or [])
+        if "education" not in parsed:
+            parsed["education"] = []
+        parsed.setdefault("skills", [])
+        parsed.setdefault("languages", [])
+        parsed.setdefault("certifications", [])
+        return parsed
 
     async def parse_jd(self, text: str) -> dict[str, Any]:
         """Parse raw job description text into structured JD profile data."""
@@ -164,7 +174,14 @@ class LLMClient:
             max_tokens=1000,
             response_format={"type": "json_object"},
         )
-        return json.loads(response)
+        parsed = json.loads(response)
+        parsed.setdefault("required_skills", parsed.get("skills") or [])
+        parsed.setdefault("nice_to_have_skills", [])
+        parsed.setdefault("responsibilities", parsed.get("requirements") or [])
+        parsed.setdefault("seniority", "unspecified")
+        parsed.setdefault("experience_years_min", parsed.get("experience_years"))
+        parsed.setdefault("experience_years_max", parsed.get("experience_years"))
+        return parsed
 
     async def generate_match_rationale(
         self,

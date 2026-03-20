@@ -2,7 +2,10 @@
 Tests for ARQ worker configuration — verifies queue setup and Redis config.
 Phase 1: RED — these tests must fail before implementation.
 """
+import uuid
+
 import pytest
+from unittest.mock import AsyncMock, patch
 
 
 def test_arq_worker_settings_importable():
@@ -108,7 +111,7 @@ def test_score_match_raises_not_implemented():
 @pytest.mark.asyncio
 async def test_on_startup_sets_context():
     """on_startup must populate ctx with db_session_factory and llm_client."""
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock
     from app.workers.arq import WorkerSettings
 
     mock_session_factory = MagicMock()
@@ -162,7 +165,7 @@ def test_redis_settings_from_url_fallback():
     """_redis_settings_from_url must work even if from_dsn is unavailable."""
     from app.workers import arq as arq_module
     from arq.connections import RedisSettings
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock
 
     # Simulate AttributeError on from_dsn (older arq version fallback)
     mock_redis_settings_class = MagicMock(spec=RedisSettings)
@@ -179,3 +182,102 @@ def test_redis_settings_from_url_fallback():
         password=None,
         database=0,
     )
+
+
+@pytest.mark.asyncio
+async def test_process_cv_job_removes_temp_file(tmp_path):
+    """process_cv_job removes the temporary upload file after processing."""
+    from app.workers.arq import process_cv_job
+
+    temp_file = tmp_path / "resume.pdf"
+    temp_file.write_text("temporary cv content")
+
+    mock_llm = type(
+        "MockLLM",
+        (),
+        {
+            "parse_cv": staticmethod(
+                AsyncMock(return_value={"name": "Jane", "skills": [], "experience": [], "education": []})
+            )
+        },
+    )()
+
+    with patch("app.services.document_extractor.extract", return_value=("Jane CV", 1.0)):
+        result = await process_cv_job(
+            {"llm_client": mock_llm, "redis": None, "db_session_factory": None},
+            str(temp_file),
+            ".pdf",
+        )
+
+    assert result["status"] == "complete"
+    assert not temp_file.exists()
+
+
+@pytest.mark.asyncio
+async def test_process_cv_job_returns_existing_candidate_for_duplicate(tmp_path):
+    """Duplicate CVs should reuse the existing candidate instead of creating a new one."""
+    from app.workers.arq import process_cv_job
+
+    temp_file = tmp_path / "resume.pdf"
+    temp_file.write_text("temporary cv content")
+
+    existing_id = uuid.uuid4()
+    existing_candidate = type("ExistingCandidate", (), {"id": existing_id})()
+
+    class FakeSession:
+        def __init__(self):
+            self.added = []
+            self.flush_calls = 0
+            self.commit_calls = 0
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        def add(self, obj):
+            self.added.append(obj)
+
+        async def flush(self):
+            self.flush_calls += 1
+
+        async def commit(self):
+            self.commit_calls += 1
+
+    fake_session = FakeSession()
+
+    class FakeSessionFactory:
+        def __call__(self):
+            return fake_session
+
+    mock_llm = type(
+        "MockLLM",
+        (),
+        {
+            "parse_cv": staticmethod(
+                AsyncMock(
+                    return_value={"name": "Jane Doe", "email": "jane@example.com", "skills": [], "experience": [], "education": []}
+                )
+            )
+        },
+    )()
+
+    with (
+        patch("app.services.document_extractor.extract", return_value=("Jane CV", 1.0)),
+        patch("app.services.duplicate_detection.find_duplicate_candidate", AsyncMock(return_value=existing_candidate)),
+    ):
+        result = await process_cv_job(
+            {"llm_client": mock_llm, "redis": None, "db_session_factory": FakeSessionFactory()},
+            str(temp_file),
+            ".pdf",
+            org_id=str(uuid.uuid4()),
+        )
+
+    assert result["status"] == "complete"
+    assert result["candidate_id"] == str(existing_id)
+    assert result["duplicate"] is True
+    assert result["existing_id"] == str(existing_id)
+    assert fake_session.commit_calls == 1
+    assert fake_session.flush_calls == 0
+    assert [type(obj).__name__ for obj in fake_session.added] == ["CV"]
