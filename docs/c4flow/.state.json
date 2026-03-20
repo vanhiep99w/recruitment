@@ -8,11 +8,18 @@
   },
   "mode": "research",
   "startedAt": "2026-03-20",
-  "completedStates": ["RESEARCH", "SPEC"],
+  "completedStates": [
+    "RESEARCH",
+    "SPEC",
+    "DESIGN"
+  ],
   "failedAttempts": 0,
   "beadsEpic": null,
   "doltRemote": "https://doltremoteapi.dolthub.com/vanhiep99w/recruitment",
   "worktree": null,
   "prNumber": null,
-  "lastError": null
+  "lastError": null,
+  "heroScreen": "GuUvs",
+  "designSystem": "docs/c4flow/designs/ai-cv-recruitment-assistant/ai-cv-recruitment-assistant.pen",
+  "screenCount": 5
 }
