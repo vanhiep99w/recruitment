@@ -8,6 +8,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI
@@ -122,6 +123,83 @@ class LLMClient:
         embeddings = [item.embedding for item in response.data]
         # Return a single vector when a single string was passed
         return embeddings[0] if isinstance(text, str) else embeddings
+
+    async def parse_cv(self, text: str) -> dict[str, Any]:
+        """Parse raw CV text into structured candidate profile data."""
+
+        response = await self.chat_complete(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Extract a candidate profile from CV text. "
+                        "Return compact JSON with keys: name, email, phone, location, "
+                        "skills, work_experience, education, languages, certifications."
+                    ),
+                },
+                {"role": "user", "content": text},
+            ],
+            temperature=0,
+            max_tokens=1200,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(response)
+
+    async def parse_jd(self, text: str) -> dict[str, Any]:
+        """Parse raw job description text into structured JD profile data."""
+
+        response = await self.chat_complete(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Extract a structured job profile from the provided job description. "
+                        "Return JSON with keys: title, required_skills, nice_to_have_skills, "
+                        "seniority, experience_years_min, experience_years_max, responsibilities."
+                    ),
+                },
+                {"role": "user", "content": text},
+            ],
+            temperature=0,
+            max_tokens=1000,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(response)
+
+    async def generate_match_rationale(
+        self,
+        *,
+        candidate_summary: dict[str, Any],
+        job_summary: dict[str, Any],
+        scores: dict[str, int],
+    ) -> str:
+        """Generate a short, recruiter-facing rationale for a candidate/job match."""
+
+        response = await self.chat_complete(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You explain candidate-job match scores to recruiters. "
+                        "Return a single plain-text rationale under 200 characters."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "candidate": candidate_summary,
+                            "job": job_summary,
+                            "scores": scores,
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ],
+            temperature=0.2,
+            max_tokens=120,
+        )
+        return response.strip()
 
     async def close(self) -> None:
         """Close the underlying HTTP client."""

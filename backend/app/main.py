@@ -11,9 +11,14 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import AuthContextMiddleware
 from app.config import settings
 from app.database import engine
+from app.routers.candidates import router as candidates_router
 from app.routers.health import router as health_router
+from app.routers.jobs import router as jobs_router
+from app.routers.pipelines import router as pipelines_router
+from app.routers.talent_pools import router as talent_pools_router
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -59,17 +64,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuthContextMiddleware)
 
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
 app.include_router(health_router)
-
-# Additional routers will be registered here as feature tasks are completed:
-# from app.routers import candidates, jobs, pipelines, talent_pools, upload, export
-# app.include_router(candidates.router, prefix="/api")
-# app.include_router(jobs.router, prefix="/api")
-# app.include_router(pipelines.router, prefix="/api")
-# app.include_router(talent_pools.router, prefix="/api")
-# app.include_router(upload.router, prefix="/api")
-# app.include_router(export.router, prefix="/api")
+app.include_router(candidates_router, prefix="/api")
+app.include_router(jobs_router, prefix="/api")
+app.include_router(pipelines_router, prefix="/api")
+app.include_router(talent_pools_router, prefix="/api")
