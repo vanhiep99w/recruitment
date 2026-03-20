@@ -67,6 +67,8 @@ jobs:
   frontend-tests:
     name: Frontend Tests (Playwright)
     runs-on: ubuntu-latest
+    # Skip until frontend package.json exists
+    if: false
 
     steps:
       - name: Checkout repository
