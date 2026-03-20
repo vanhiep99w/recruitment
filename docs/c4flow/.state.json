@@ -14,6 +14,14 @@
     "DESIGN",
     "BEADS"
   ],
+  "taskLoop": {
+    "currentTaskId": "recruitment-5h9.1",
+    "currentTaskSlug": "backend-project-scaffold",
+    "currentBranch": "feat/recruitment-5h9.1-backend-project-scaffold",
+    "subState": "REVIEWING",
+    "completedTasks": [],
+    "failedTasks": []
+  },
   "failedAttempts": 0,
   "beadsEpic": "recruitment-5h9",
   "doltRemote": "https://doltremoteapi.dolthub.com/vanhiep99w/recruitment",
