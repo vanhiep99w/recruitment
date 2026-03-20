@@ -12,6 +12,10 @@ class TalentPoolCreate(BaseSchema):
     org_id: uuid.UUID
 
 
+class TalentPoolCreateRequest(BaseSchema):
+    name: str = Field(..., min_length=1, max_length=255)
+
+
 class TalentPoolRead(BaseSchema):
     id: uuid.UUID
     name: str
@@ -25,3 +29,19 @@ class TalentPoolUpdate(BaseSchema):
 
 class TalentPoolMemberAdd(BaseSchema):
     candidate_id: uuid.UUID
+
+
+class TalentPoolMemberBatchAdd(BaseSchema):
+    candidate_ids: list[uuid.UUID] = Field(min_length=1)
+
+
+class TalentPoolListItem(BaseSchema):
+    id: uuid.UUID
+    name: str
+    org_id: uuid.UUID
+    created_at: datetime
+    candidate_count: int = 0
+
+
+class TalentPoolListResponse(BaseSchema):
+    data: list[TalentPoolListItem]
