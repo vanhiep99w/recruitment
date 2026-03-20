@@ -2,3 +2,11 @@
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Environment files
+.env
+*.env
+backend/.env
+
+# Quality gate (ephemeral)
+quality-gate-status.json
