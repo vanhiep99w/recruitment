@@ -19,6 +19,7 @@ from app.routers.health import router as health_router
 from app.routers.jobs import router as jobs_router
 from app.routers.pipelines import router as pipelines_router
 from app.routers.talent_pools import router as talent_pools_router
+from app.routers.upload import router as upload_router
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -74,3 +75,4 @@ app.include_router(candidates_router, prefix="/api")
 app.include_router(jobs_router, prefix="/api")
 app.include_router(pipelines_router, prefix="/api")
 app.include_router(talent_pools_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
