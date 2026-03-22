@@ -9,8 +9,21 @@ FEATURE_SLUG="${1:?Usage: $0 <feature-slug> <ec2-host> <fqdn>}"
 EC2_HOST="${2:?}"
 FQDN="${3:?}"
 
-STATE_FILE="docs/c4flow/.state.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+# Terraform expects CLOUDFLARE_API_TOKEN in the environment. Fall back to ~/.cloudflare
+# so the destroy path matches the credential precheck behavior.
+if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] && [ -f "$HOME/.cloudflare" ]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.cloudflare"
+fi
+
+STATE_FILE="$REPO_ROOT/docs/c4flow/.state.json"
 TF_DIR=$(jq -r '.infraState.tfDir // empty' "$STATE_FILE")
+if [ -n "$TF_DIR" ] && [[ "$TF_DIR" != /* ]]; then
+  TF_DIR="$REPO_ROOT/$TF_DIR"
+fi
 
 # ── Terraform destroy ─────────────────────────────────────────────────────────
 if [ -d "$TF_DIR" ] && [ -f "$TF_DIR/terraform.tfstate" ]; then
@@ -69,7 +82,7 @@ jq \
   --arg clearedAt "$CLEARED_AT" \
   'del(.infraState) | .infraConfig.destroyedAt = $clearedAt' \
   "$STATE_FILE" > "${STATE_FILE}.tmp" \
-  && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+  && mv -f "${STATE_FILE}.tmp" "$STATE_FILE"
 
 echo ""
 echo "=== Infrastructure Destroyed ==="
